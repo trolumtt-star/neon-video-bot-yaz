@@ -1,0 +1,15 @@
+{
+  "name": "RedCut Edit Bot",
+  "short_name": "RedCut",
+  "description": "Videolarını Gemini ile analiz edip müziğin ritmine göre otomatik edit yapan bot",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050506",
+  "theme_color": "#050506",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

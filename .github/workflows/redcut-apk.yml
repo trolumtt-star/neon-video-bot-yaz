@@ -1,0 +1,58 @@
+name: RedCut APK
+
+on:
+  push:
+    branches: [redcut]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  derle:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android SDK kontrol
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0" > /dev/null || true
+
+      - name: Gradle indir
+        run: |
+          curl -fsSL --retry 6 --retry-delay 10 --retry-all-errors -o gradle.zip https://services.gradle.org/distributions/gradle-8.14.3-bin.zip
+          unzip -q gradle.zip -d "$HOME/gradle-dist"
+          echo "$HOME/gradle-dist/gradle-8.14.3/bin" >> "$GITHUB_PATH"
+
+      - name: Release APK derle
+        working-directory: android
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: APK'yı adlandır
+        run: cp android/app/build/outputs/apk/release/app-release.apk RedCut.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RedCut-apk
+          path: RedCut.apk
+
+      - name: Release yayınla
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: redcut-v1.0.${{ github.run_number }}
+          name: RedCut v1.0.${{ github.run_number }}
+          target_commitish: redcut
+          body: |
+            🎬 RedCut: prompt ile beat-sync edit + anlatım videosu botu.
+            Telefona kurmak için aşağıdaki **RedCut.apk** dosyasını indir ve aç.
+            (İlk kurulumda "bilinmeyen kaynaklardan yükleme" iznini vermen gerekir.)
+          files: RedCut.apk
+          make_latest: false

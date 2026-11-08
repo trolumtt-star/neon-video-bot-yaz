@@ -1,0 +1,50 @@
+plugins {
+    id 'com.android.application'
+}
+
+def surumNo = (System.getenv("VERSION_CODE") ?: "1").toInteger()
+
+android {
+    namespace 'com.redcut.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.redcut.app'
+        minSdk 29
+        targetSdk 35
+        versionCode surumNo
+        versionName "1.0.${surumNo}"
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('../redcut.jks')
+            storePassword 'redcut123'
+            keyAlias 'redcut'
+            keyPassword 'redcut123'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // Web arayüzü (../../web) uygulamanın assets klasörü olarak paketlenir
+    sourceSets {
+        main {
+            assets.srcDirs = ['../../web']
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+}
