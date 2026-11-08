@@ -1,0 +1,50 @@
+plugins {
+    id 'com.android.application'
+}
+
+def surumNo = (System.getenv("VERSION_CODE") ?: "1").toInteger()
+
+android {
+    namespace 'com.neonvideobot.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.neonvideobot.app'
+        minSdk 29
+        targetSdk 35
+        versionCode surumNo
+        versionName "1.0.${surumNo}"
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('../neonbot.jks')
+            storePassword 'neonbot123'
+            keyAlias 'neonbot'
+            keyPassword 'neonbot123'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // Web arayüzü (../../web) doğrudan uygulamanın assets klasörü olarak paketlenir
+    sourceSets {
+        main {
+            assets.srcDirs = ['../../web']
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+}

@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#050505">
+<title>Neon Video Bot</title>
+<style>
+@font-face { font-family: Inter; font-weight: 400; src: url(fonts/Inter-Regular.otf); }
+@font-face { font-family: Inter; font-weight: 500; src: url(fonts/Inter-Medium.otf); }
+@font-face { font-family: Inter; font-weight: 600 700; src: url(fonts/Inter-Bold.otf); }
+@font-face { font-family: Inter; font-weight: 800 900; src: url(fonts/Inter-ExtraBold.otf); }
+:root {
+  --bg: #050505; --panel: #0d0b0d; --panel2: #141114; --line: #2a1f24;
+  --red: #ff1744; --red2: #ff4d6d; --redglow: rgba(255, 23, 68, .55);
+  --white: #ffffff; --muted: #9a8f95; --green: #22e39a;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--white); font-family: Inter, system-ui, sans-serif; overflow: hidden; }
+button, input, textarea, select { font-family: inherit; }
+
+/* ---------- arka plan efektleri */
+.bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.bg::before { content: ''; position: absolute; left: -50%; right: -50%; bottom: -10%; height: 55%;
+  background-image: linear-gradient(var(--redglow) 2px, transparent 2px), linear-gradient(90deg, var(--redglow) 2px, transparent 2px);
+  background-size: 60px 60px; transform: perspective(300px) rotateX(62deg); transform-origin: bottom;
+  animation: izgara 2.4s linear infinite; opacity: .35; mask-image: linear-gradient(transparent, #000 70%); -webkit-mask-image: linear-gradient(transparent, #000 70%); }
+@keyframes izgara { to { background-position: 0 60px; } }
+.bg::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 3px); }
+.glow { position: absolute; width: 520px; height: 520px; border-radius: 50%; filter: blur(90px); opacity: .28; background: var(--red); animation: suzul 9s ease-in-out infinite alternate; }
+.glow.g2 { right: -220px; top: 30%; background: #ff2a7a; animation-duration: 12s; }
+.glow.g1 { left: -260px; top: -180px; }
+@keyframes suzul { to { transform: translate(60px, 80px) scale(1.15); } }
+
+/* ---------- yerleşim */
+.app { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top); }
+header { padding: 18px 20px 6px; display: flex; align-items: center; gap: 12px; }
+.logo { font-weight: 900; font-size: 26px; letter-spacing: 1px; line-height: 1; }
+.logo b { color: var(--red); text-shadow: 0 0 8px var(--red), 0 0 22px var(--red), 0 0 44px var(--redglow); animation: titre 4s infinite; }
+.logo small { display: block; font-size: 11px; letter-spacing: 4px; color: var(--muted); font-weight: 600; margin-top: 4px; }
+@keyframes titre { 0%, 18%, 22%, 62%, 64%, 100% { opacity: 1; } 20%, 63% { opacity: .35; } }
+.durum { margin-left: auto; font-size: 12px; padding: 7px 12px; border-radius: 99px; border: 1px solid var(--line); background: rgba(20,17,20,.7); color: var(--muted); display: flex; gap: 7px; align-items: center; }
+.durum i { width: 8px; height: 8px; border-radius: 50%; background: #555; }
+.durum.ok i { background: var(--green); box-shadow: 0 0 10px var(--green); }
+.durum.yok i { background: var(--red); box-shadow: 0 0 10px var(--red); }
+main { flex: 1; overflow-y: auto; padding: 10px 18px 120px; }
+.sayfa { display: none; animation: gir .35s ease; }
+.sayfa.aktif { display: block; }
+@keyframes gir { from { opacity: 0; transform: translateY(14px); } }
+
+/* ---------- alt menü */
+nav { position: fixed; left: 14px; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 5; display: flex; gap: 6px; padding: 7px;
+  background: rgba(13,11,13,.88); backdrop-filter: blur(14px); border: 1px solid var(--line); border-radius: 24px; }
+nav button { flex: 1; background: none; border: 0; color: var(--muted); padding: 11px 4px; border-radius: 18px; font-size: 12px; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+nav button svg { width: 22px; height: 22px; }
+nav button.aktif { color: #fff; background: linear-gradient(135deg, rgba(255,23,68,.25), rgba(255,23,68,.05)); box-shadow: inset 0 0 0 1px rgba(255,23,68,.5), 0 0 20px rgba(255,23,68,.2); }
+nav button.aktif svg { filter: drop-shadow(0 0 6px var(--red)); color: var(--red); }
+
+/* ---------- oluştur */
+.sahne { display: flex; flex-direction: column; align-items: center; padding-top: 14px; }
+.buyuk { position: relative; width: 236px; height: 236px; border-radius: 50%; border: 0; background: none; padding: 0; margin: 18px 0 8px; cursor: pointer; }
+.buyuk .halka { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, var(--red), transparent 30%, #fff 45%, transparent 55%, var(--red2) 80%, var(--red)); animation: don 3s linear infinite; filter: drop-shadow(0 0 18px var(--red)); }
+.buyuk .halka::after { content: ''; position: absolute; inset: 5px; border-radius: 50%; background: var(--bg); }
+.buyuk .ic { position: absolute; inset: 16px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 30%, #2a0a12, #0a0507 70%); box-shadow: inset 0 0 40px rgba(255,23,68,.35), 0 0 60px rgba(255,23,68,.35); animation: nabiz 2s ease-in-out infinite; }
+.buyuk .ic span { font-size: 30px; font-weight: 900; letter-spacing: 3px; text-shadow: 0 0 10px var(--red), 0 0 30px var(--red); }
+.buyuk .ic small { color: var(--muted); font-size: 12px; margin-top: 8px; letter-spacing: 2px; }
+.buyuk:active .ic { transform: scale(.96); }
+@keyframes don { to { transform: rotate(360deg); } }
+@keyframes nabiz { 50% { box-shadow: inset 0 0 60px rgba(255,23,68,.55), 0 0 90px rgba(255,23,68,.5); } }
+.buyuk.calisiyor .halka { animation-duration: .9s; }
+.adet { display: flex; gap: 8px; margin: 14px 0 6px; }
+.adet button { width: 46px; height: 46px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); color: #fff; font-weight: 800; font-size: 17px; }
+.adet button.secili { border-color: var(--red); box-shadow: 0 0 16px var(--redglow), inset 0 0 12px rgba(255,23,68,.3); color: var(--red); }
+.ipucu { color: var(--muted); font-size: 13px; text-align: center; line-height: 1.5; max-width: 340px; }
+.kart { width: 100%; background: linear-gradient(180deg, rgba(20,17,20,.92), rgba(10,8,10,.92)); border: 1px solid var(--line); border-radius: 22px; padding: 16px; margin-top: 16px; }
+.ilerleme { display: none; }
+.ilerleme.goster { display: block; }
+.onizleme { display: flex; gap: 14px; align-items: flex-start; }
+.onizleme canvas { width: 118px; aspect-ratio: 9/16; border-radius: 14px; background: #000; border: 1px solid var(--red); box-shadow: 0 0 22px var(--redglow); flex-shrink: 0; }
+.adimlar { flex: 1; min-width: 0; }
+.adim { display: flex; gap: 10px; align-items: center; font-size: 14px; padding: 7px 0; color: var(--muted); }
+.adim i { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #444; flex-shrink: 0; display: grid; place-items: center; font-style: normal; font-size: 11px; }
+.adim.aktif { color: #fff; } .adim.aktif i { border-color: var(--red); border-top-color: transparent; animation: don .8s linear infinite; }
+.adim.tamam { color: #fff; } .adim.tamam i { border-color: var(--green); background: var(--green); color: #000; }
+.adim.tamam i::after { content: '✓'; }
+.bar { height: 8px; background: #1d171a; border-radius: 99px; overflow: hidden; margin-top: 10px; }
+.bar div { height: 100%; width: 0; background: linear-gradient(90deg, var(--red), #fff); box-shadow: 0 0 12px var(--red); border-radius: 99px; transition: width .2s; }
+.baslikMini { font-size: 13px; color: #fff; font-weight: 700; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sayac { font-size: 12px; color: var(--red); font-weight: 800; letter-spacing: 2px; margin-bottom: 6px; }
+.btn { border: 0; border-radius: 14px; padding: 13px 16px; font-weight: 800; font-size: 14px; color: #fff; background: var(--panel2); border: 1px solid var(--line); }
+.btn.kirmizi { background: linear-gradient(135deg, var(--red), #b0002a); border: 0; box-shadow: 0 0 22px var(--redglow); }
+.btn.tam { width: 100%; margin-top: 12px; }
+
+/* ---------- videolar */
+.liste { display: grid; gap: 14px; }
+.video { display: flex; gap: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 12px; animation: gir .4s ease; }
+.video img, .video .bos { width: 92px; aspect-ratio: 9/16; object-fit: cover; border-radius: 12px; background: #111; border: 1px solid #2a1f24; flex-shrink: 0; }
+.video .bilgi { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.video h3 { margin: 2px 0 4px; font-size: 15px; line-height: 1.3; }
+.video .tarih { color: var(--muted); font-size: 12px; }
+.eylemler { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 10px; }
+.eylemler button { border: 1px solid var(--line); background: var(--panel2); color: #fff; border-radius: 11px; padding: 8px 10px; font-size: 12px; font-weight: 700; }
+.eylemler button.ana { background: var(--red); border-color: var(--red); box-shadow: 0 0 14px var(--redglow); }
+.bosListe { text-align: center; color: var(--muted); padding: 60px 20px; }
+
+/* ---------- ayarlar */
+.alan { margin-bottom: 14px; }
+.alan label { display: block; font-size: 12px; font-weight: 800; letter-spacing: 1px; color: var(--muted); margin: 0 0 7px 4px; text-transform: uppercase; }
+.alan input, .alan textarea, .alan select { width: 100%; background: #0b090b; border: 1px solid var(--line); color: #fff; border-radius: 14px; padding: 14px; font-size: 15px; outline: none; transition: .2s; }
+.alan textarea { min-height: 84px; resize: vertical; }
+.alan input:focus, .alan textarea:focus, .alan select:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(255,23,68,.18), 0 0 18px rgba(255,23,68,.25); }
+.satir { display: flex; gap: 10px; } .satir > * { flex: 1; }
+.anahtar { position: relative; } .anahtar button { position: absolute; right: 8px; top: 8px; bottom: 8px; border: 0; border-radius: 10px; background: var(--panel2); color: var(--muted); padding: 0 12px; font-weight: 700; }
+.anahtarAl { color: var(--red2); font-size: 13px; font-weight: 700; text-decoration: none; display: inline-block; margin: 2px 0 16px 4px; }
+.anahtarlar { display: flex; justify-content: space-between; align-items: center; padding: 12px 4px; border-bottom: 1px solid var(--line); font-size: 15px; }
+.anahtar-sw { width: 52px; height: 30px; border-radius: 99px; background: #2a2226; position: relative; border: 0; transition: .2s; }
+.anahtar-sw::after { content: ''; position: absolute; left: 4px; top: 4px; width: 22px; height: 22px; border-radius: 50%; background: #777; transition: .2s; }
+.anahtar-sw.acik { background: var(--red); box-shadow: 0 0 14px var(--redglow); } .anahtar-sw.acik::after { left: 26px; background: #fff; }
+h2 { font-size: 22px; margin: 6px 4px 16px; font-weight: 900; }
+h2 span { color: var(--red); text-shadow: 0 0 14px var(--red); }
+
+/* ---------- bildirim + oynatıcı */
+.toast { position: fixed; left: 50%; top: calc(18px + env(safe-area-inset-top)); transform: translate(-50%, -150%); z-index: 20; background: #120d10; border: 1px solid var(--red); box-shadow: 0 0 24px var(--redglow); padding: 13px 18px; border-radius: 16px; font-size: 14px; font-weight: 600; max-width: 90%; transition: .35s cubic-bezier(.2,1.4,.4,1); }
+.toast.goster { transform: translate(-50%, 0); }
+.oynatici { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.92); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 14px; padding: 20px; }
+.oynatici.goster { display: flex; }
+.oynatici video { max-height: 78vh; max-width: 100%; border-radius: 18px; box-shadow: 0 0 40px var(--redglow); border: 1px solid var(--red); }
+</style>
+</head>
+<body>
+<div class="bg"><div class="glow g1"></div><div class="glow g2"></div></div>
+<div class="app">
+  <header>
+    <div class="logo">NEON <b>VİDEO</b> BOT<small>YAPAY ZEKA REKLAM FABRİKASI</small></div>
+    <div class="durum" id="apiDurum"><i></i><span>API</span></div>
+  </header>
+  <main>
+    <!-- OLUŞTUR -->
+    <section class="sayfa aktif" id="s-olustur">
+      <div class="sahne">
+        <button class="buyuk" id="olusturBtn"><div class="halka"></div><div class="ic"><span id="olusturYazi">OLUŞTUR</span><small id="olusturAlt">dokun ve başlasın</small></div></button>
+        <div class="adet" id="adet"></div>
+        <div class="ipucu" id="ipucu">Gemini her video için yeni bir esnaf sohbeti yazar, seslendirir; uygulama videoyu çizip galeriye kaydeder.</div>
+        <div class="kart ilerleme" id="ilerleme">
+          <div class="sayac" id="sayac">VİDEO 1 / 3</div>
+          <div class="onizleme">
+            <canvas id="onizleme" width="270" height="480"></canvas>
+            <div class="adimlar">
+              <div class="baslikMini" id="baslikMini">Hazırlanıyor…</div>
+              <div class="adim" data-a="senaryo"><i></i>Senaryo yazılıyor</div>
+              <div class="adim" data-a="ses"><i></i>Seslendirme</div>
+              <div class="adim" data-a="video"><i></i>Video çiziliyor</div>
+              <div class="adim" data-a="kayit"><i></i>Galeriye kaydediliyor</div>
+              <div class="bar"><div id="bar"></div></div>
+            </div>
+          </div>
+          <button class="btn tam" id="durdurBtn">Durdur</button>
+        </div>
+      </div>
+    </section>
+    <!-- VİDEOLAR -->
+    <section class="sayfa" id="s-videolar">
+      <h2>Videolarım <span>●</span></h2>
+      <div class="liste" id="liste"></div>
+    </section>
+    <!-- AYARLAR -->
+    <section class="sayfa" id="s-ayarlar">
+      <h2>Ayarlar <span>⚙</span></h2>
+      <div class="alan"><label>Gemini API anahtarı</label>
+        <div class="anahtar"><input id="apiKey" type="password" placeholder="AIza..." autocomplete="off"><button id="goster">Göster</button></div></div>
+      <a class="anahtarAl" href="#" id="anahtarAl">→ Ücretsiz API anahtarı al (Google AI Studio)</a>
+      <div class="alan"><label>Marka adı</label><input id="marka"></div>
+      <div class="alan"><label>Ürün açıklaması (Gemini bunu anlatır)</label><textarea id="urun"></textarea></div>
+      <div class="alan"><label>Slogan</label><input id="slogan"></div>
+      <div class="satir">
+        <div class="alan"><label>Buton yazısı</label><input id="cta"></div>
+        <div class="alan"><label>Site / Instagram</label><input id="iletisim" placeholder="@hesabin"></div>
+      </div>
+      <div class="alan"><label>Sektörler (virgülle)</label><input id="sektorler"></div>
+      <div class="alan"><label>Ek talimat (isteğe bağlı)</label><input id="ekTalimat" placeholder="ör. daha komik olsun, Urfa ağzı kullan"></div>
+      <div class="satir">
+        <div class="alan"><label>Video renkleri</label><select id="palet"><option value="kirmizi">Neon kırmızı</option><option value="mor">Mor · mavi</option><option value="yesil">Yeşil · mavi</option></select></div>
+        <div class="alan"><label>Yapay zeka sesi</label><select id="aiSes"><option>Zephyr</option><option>Kore</option><option>Aoede</option><option>Leda</option><option>Charon</option><option>Puck</option><option>Orus</option></select></div>
+      </div>
+      <div class="anahtarlar">Gemini seslendirme <button class="anahtar-sw" id="sw-seslendirme"></button></div>
+      <div class="anahtarlar">Arka plan müziği <button class="anahtar-sw" id="sw-muzik"></button></div>
+      <div class="alan" style="margin-top:14px"><label>Metin modeli (gelişmiş)</label><input id="metinModeli"></div>
+      <div class="alan"><label>Ses modeli (gelişmiş)</label><input id="sesModeli"></div>
+      <button class="btn kirmizi tam" id="kaydet">Kaydet</button>
+    </section>
+  </main>
+  <nav>
+    <button class="aktif" data-s="olustur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg>Oluştur</button>
+    <button data-s="videolar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9l5 3-5 3z" fill="currentColor"/></svg>Videolar</button>
+    <button data-s="ayarlar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Ayarlar</button>
+  </nav>
+</div>
+<div class="toast" id="toast"></div>
+<div class="oynatici" id="oynatici"><video id="video" controls playsinline></video><button class="btn kirmizi" id="kapatOyn">Kapat</button></div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
