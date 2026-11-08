@@ -25,9 +25,11 @@ jobs:
           ls "$ANDROID_HOME/platforms" || true
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0" > /dev/null || true
 
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.14.3'
+      - name: Gradle indir
+        run: |
+          curl -fsSL --retry 6 --retry-delay 10 --retry-all-errors -o gradle.zip https://services.gradle.org/distributions/gradle-8.14.3-bin.zip
+          unzip -q gradle.zip -d "$HOME/gradle-dist"
+          echo "$HOME/gradle-dist/gradle-8.14.3/bin" >> "$GITHUB_PATH"
 
       - name: Release APK derle
         working-directory: android
