@@ -1,3 +1,10 @@
+// Model adı temizleme: 'Gemini 3.5 Flash-Lite', 'models/gemini-...', tırnaklı yazımlar -> 'gemini-3.5-flash-lite'
+export const METIN_MODELLERI = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash-lite', 'gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-flash-latest'];
+export function modelTemizle(m, varsayilan = 'gemini-3.5-flash-lite') {
+  const t = String(m || '').trim().toLowerCase().replace(/^models\//, '').replace(/[`'"]/g, '').replace(/[\s_]+/g, '-').replace(/-+/g, '-');
+  return /^[a-z0-9][a-z0-9.\-]*$/.test(t) ? t : varsayilan;
+}
+export const metinModelleri = ayar => [...new Set([modelTemizle(ayar.metinModeli), ...METIN_MODELLERI])];
 // Gemini: senaryo (JSON şemalı) + iki konuşmacılı Türkçe seslendirme
 import { pcmCoz, bolumle } from './ses.js';
 
@@ -55,8 +62,9 @@ async function istek(ayar, model, govde, deneme = 3, durum = () => { }) {
     });
     if (r.ok) return r.json();
     const metin = await r.text();
-    if ((r.status === 429 || r.status >= 500) && i < deneme - 1) {
-      const bekle = r.status === 429 ? 30 : 6;
+    const gunluk = r.status === 429 && /per ?day|PerDay|daily|RequestsPerDay/i.test(metin);
+    if (((r.status === 429 && !gunluk && i === 0) || r.status >= 500) && i < deneme - 1) {
+      const bekle = r.status === 429 ? 15 : 6;
       durum(`Gemini yoğun (${r.status}), ${bekle} sn bekleniyor...`);
       await new Promise(res => setTimeout(res, bekle * 1000));
       continue;
@@ -103,7 +111,7 @@ ${ayar.ekTalimat ? '- EK TALİMAT: ' + ayar.ekTalimat : ''}
 ${gecmis.length ? 'DAHA ÖNCE YAPILANLAR (bunları TEKRARLAMA, farklı konu/espri bul):\n- ' + gecmis.slice(-15).join('\n- ') : ''}`;
 
   durum('Senaryo yazılıyor (Gemini)...');
-  const modeller = [ayar.metinModeli || 'gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash'];
+  const modeller = metinModelleri(ayar);
   let son;
   for (const m of [...new Set(modeller)]) {
     try {
@@ -118,7 +126,8 @@ ${gecmis.length ? 'DAHA ÖNCE YAPILANLAR (bunları TEKRARLAMA, farklı konu/espr
       if (e.durum === 400 || e.durum === 403) {
         if (/API key|API_KEY|permission/i.test(e.message)) throw new Error('API anahtarı geçersiz. Ayarlardan kontrol et.');
       }
-      if (e.durum !== 404) break;
+      // yanlış/eskimiş model adı, kota (429) veya geçici hata: sıradaki modeli dene
+      if (![400, 404, 429, 500, 503].includes(e.durum)) break;
     }
   }
   throw son;
@@ -166,7 +175,7 @@ export function diyalogSirasi(s) {
 }
 
 async function ttsIste(ayar, satirlar, konusmacilar, stil, durum) {
-  const model = ayar.sesModeli || 'gemini-2.5-flash-preview-tts';
+  const model = modelTemizle(ayar.sesModeli, 'gemini-2.5-flash-preview-tts');
   const metin = stil + '\n\n' + satirlar.map(([k, m]) => `${k}: ${m}`).join('\n');
   const j = await istek(ayar, model, {
     contents: [{ parts: [{ text: metin }] }],

@@ -1,6 +1,7 @@
 // SİNEMA PLANI: kullanıcının yazdığı istemden (ör. "Çanakkale'de cephede...") sahne sahne film planı.
 // Gemini varsa JSON şemayla yazdırır; yoksa anahtar kelimelerden hazır şablon kurar.
 import { MEKANLAR, KAMERALAR, TIPLER, EYLEMLER } from './sinemaMotor.js';
+import { metinModelleri } from './gemini.js';
 
 const API = 'https://generativelanguage.googleapis.com/v1beta/models/';
 export const RUHLAR = ['huzunlu', 'destansi', 'neseli', 'gergin', 'umut'];
@@ -71,17 +72,23 @@ KURALLAR:
 ${varyant ? `- Bu ${varyant}. versiyon: öncekilerden farklı bir kurgu, farklı kamera ve sahne sırası dene.` : ''}`;
 
 export async function planGemini(ayar, istem, varyant = 0, durum = () => { }) {
-  const model = ayar.metinModeli || 'gemini-2.5-flash';
-  for (let i = 0; i < 3; i++) {
-    const r = await fetch(API + model + ':generateContent', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': ayar.apiKey.trim() },
-      body: JSON.stringify({ contents: [{ parts: [{ text: TALIMAT(ayar, istem, varyant) }] }], generationConfig: { responseMimeType: 'application/json', responseSchema: SEMA, temperature: 1 } }),
-    });
-    if (r.ok) { const j = await r.json(); const txt = j.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || ''; return JSON.parse(txt); }
-    if ((r.status === 429 || r.status >= 500) && i < 2) { durum(`Gemini yoğun (${r.status}), bekleniyor…`); await new Promise(res => setTimeout(res, r.status === 429 ? 25000 : 5000)); continue; }
-    let m = await r.text(); try { m = JSON.parse(m).error.message; } catch { }
-    throw new Error(`Gemini ${r.status}: ${m}`);
+  let son = null;
+  for (const model of metinModelleri(ayar)) {
+    for (let i = 0; i < 2; i++) {
+      const r = await fetch(API + model + ':generateContent', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': ayar.apiKey.trim() },
+        body: JSON.stringify({ contents: [{ parts: [{ text: TALIMAT(ayar, istem, varyant) }] }], generationConfig: { responseMimeType: 'application/json', responseSchema: SEMA, temperature: 1 } }),
+      });
+      if (r.ok) { const j = await r.json(); const txt = j.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || ''; if (txt) return JSON.parse(txt); son = new Error(model + ': boş cevap'); break; }
+      let m = await r.text(); try { m = JSON.parse(m).error.message; } catch { }
+      if ((r.status === 400 || r.status === 403) && /API key|API_KEY|permission/i.test(m)) throw new Error('API anahtarı geçersiz. Ayarlardan kontrol et.');
+      son = new Error(`Gemini ${r.status} (${model}): ${m}`);
+      if (r.status >= 500 && i === 0) { durum(`Gemini yoğun (${model}), tekrar deneniyor…`); await new Promise(res => setTimeout(res, 4000)); continue; }
+      if (r.status === 429) durum(`${model} kotası doldu, sıradaki model deneniyor…`);
+      break; // 400/404/429: sıradaki model
+    }
   }
+  throw son || new Error('Gemini cevap vermedi');
 }
 
 // ------------------------------------------------------------ internetsiz şablonlar

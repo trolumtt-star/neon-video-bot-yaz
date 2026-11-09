@@ -1,4 +1,4 @@
-import { senaryoUret, seslendir } from './gemini.js';
+import { senaryoUret, seslendir, modelTemizle, METIN_MODELLERI } from './gemini.js';
 import { HAZIR } from './yerel.js';
 import { rastgeleSenaryo } from './uretec.js';
 import { metniCoz, metneCevir, BOS_SABLON } from './senaryoMetin.js';
@@ -19,13 +19,14 @@ const VARSAYILAN = {
   sektorler: 'Restoran, Kebapçı, Diş kliniği, Kuaför, Otel, Veteriner, Oto servis, Pastane',
   hashtagler: '#yapayzeka #esnaf #işletme #girişimci #reels #keşfet',
   ekTalimat: '', palet: 'kirmizi', aiSes: 'Zephyr', sesMotoru: 'telefon', muzik: true,
-  metinModeli: 'gemini-2.5-flash', sesModeli: 'gemini-2.5-flash-preview-tts', adet: 3, kaynak: 'otomatik', dongu: true,
+  metinModeli: 'gemini-3.5-flash-lite', sesModeli: 'gemini-2.5-flash-preview-tts', adet: 3, kaynak: 'otomatik', dongu: true,
 };
 const oku = (k, v) => { try { return JSON.parse(localStorage.getItem(k)) ?? v; } catch { return v; } };
 const yaz = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { } };
 let ayar = { ...VARSAYILAN, ...oku('nvb_ayar', {}) };
 if (ayar.seslendirme === false && !oku('nvb_ayar', {}).sesMotoru) ayar.sesMotoru = 'kapali';
 if (!ayar.v3) { ayar.kaynak = 'otomatik'; ayar.v3 = true; yaz('nvb_ayar', ayar); }
+ayar.metinModeli = modelTemizle(ayar.metinModeli); if (!METIN_MODELLERI.includes(ayar.metinModeli)) ayar.metinModeli = 'gemini-3.5-flash-lite';
 if (ayar.marka === 'Yankı AI') { ayar.marka = 'Dinlio AI'; yaz('nvb_ayar', ayar); }
 let videolar = oku('nvb_videolar', []);
 let kuyruk = oku('nvb_kuyruk', null);
