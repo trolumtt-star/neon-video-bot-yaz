@@ -9,7 +9,7 @@ const TEMALAR = [
   'gece geç saatte gelen sipariş', 'bayram öncesi yoğunluk', 'esnaf lokantasında öğle', 'sabah ilk çay', 'kaçan müşteriler',
   'telefonu açamamaktan şikayet', 'emekli olunca ne yapacağız', 'zam gelen elektrik faturası', 'yeni çırak', 'Google yorumları',
 ];
-const MEKANLAR = ['kafe', 'dukkan_onu', 'sahil', 'araba', 'yuruyus'];
+const MEKANLAR = ['kafe', 'dukkan_onu', 'sahil', 'araba', 'yuruyus', 'park', 'durak', 'pazar', 'balik'];
 const ZAMANLAR = ['sabah', 'ogle', 'aksam', 'gece'];
 
 const S = (t, extra = {}) => ({ type: t, ...extra });
@@ -92,7 +92,7 @@ KURALLAR:
 - Doğal, sokak ağzı ama saygılı, gerçek esnaf Türkçesi. Esprili ol, klişeden kaç.
 - HER REPLİK EN FAZLA 12 KELİME. Kısa ve vurucu.
 - isimler gerçekçi Türk isimleri. isletme_adi kısa olsun (ör. "Beyzade Kebap").
-- mekan: "${mekan}", zaman: "${zaman}" kullan. (kafe=kafede oturuyorlar, dukkan_onu=dükkan önünde taburede çay, sahil=sahilde çay bahçesi, araba=arabada trafikte gidiyorlar (B şoför, A yanında), yuruyus=sokakta birlikte yürüyorlar). Sohbet bu ortama uygun olsun.
+- mekan: "${mekan}", zaman: "${zaman}" kullan. (kafe=kafede oturuyorlar, dukkan_onu=dükkan önünde taburede çay, sahil=sahilde çay bahçesi, araba=arabada trafikte gidiyorlar (B şoför, A yanında), yuruyus=sokakta birlikte yürüyorlar, park=parkta piknik masasında, durak=otobüs durağında bekliyorlar, pazar=semt pazarında geziyorlar, balik=iskelede balık tutuyorlar). Sohbet bu ortama uygun olsun.
 - kanca: videonun ilk 2 saniyesinde ekranda yazacak merak uyandırıcı yazı, en fazla 7 kelime. kanca_vurgu: kancadaki tek bir kelime (vurgulanacak).
 - sonuc: çağrının sonucu kartı (tur: "Yeni sipariş" | "Randevu" | "Rezervasyon" | "Teklif"; baslik: kısa detay; detay: saat/adres/kişi gibi).
 - panel_kartlari: panelde görünen bugünkü diğer 3 kayıt (aynı sektöre uygun, isimli).

@@ -137,7 +137,7 @@ export function cizici(plan) {
     const zilAktif = t >= plan.zilT && t < plan.zilBitis;
     const sars = s.mekan === 'araba' ? arabaSarsinti(t) : 0;
     const konusan = aktifKonusma(t, k => !k.telefon && !k.altyazi);
-    const sira = s.mekan === 'yuruyus' ? ['B', 'A'] : ['A', 'B'];
+    const sira = D.B.taban < D.A.taban ? ['B', 'A'] : ['A', 'B'];
     for (const kim of sira) {
       const L = D[kim];
       const g = plan.gorunum[kim];
@@ -152,17 +152,17 @@ export function cizici(plan) {
       let goz = kirp ? 'kapali' : 'acik', poz = 'dinlen';
       if (ben) { poz = konusan.poz || 'dinlen'; if (konusan.goz) goz = konusan.goz; }
       if (c.unlem && kim === 'B') { goz = 'saskin'; poz = 'saskin'; }
-      if (s.mekan === 'yuruyus' && kim === 'A' && (poz === 'dinlen')) poz = 'cep';
+      if (L.ayakta && kim === 'A' && poz === 'dinlen') poz = 'cep';
       if (L.sofor && poz !== 'saskin') poz = 'direksiyon';
       if (c.telefonElde && kim === 'A') poz = 'telefon';
       if (c.gulmeT && t > c.gulmeT) { goz = 'gulen'; agiz = Math.floor(t * 8) % 2 + 1; }
       const bob = (Math.sin(t * (ben ? 7 : 2.2) + sid) > (ben ? 0.2 : 0.75)) ? 1 : 0;
       const ekran = poz === 'cep' ? (zilAktif && Math.floor(t * 8) % 2 === 0 ? pal[0] : '#22232c') : pal[0];
-      const spr = karakterCiz(g, { agiz, goz, poz, bob, ekran, ayakta: !!L.ayakta, adim: t * 1.7 + (kim === 'B' ? 0.5 : 0) });
+      const spr = karakterCiz(g, { agiz, goz, poz, bob, ekran, ayakta: !!L.ayakta, yuruyor: !L.sabit, adim: t * 1.7 + (kim === 'B' ? 0.5 : 0) });
       const ust = L.taban - spr.height + sars;
       if (L.yuz === 1) d.drawImage(spr, L.x - 26, ust);
       else { d.save(); d.translate(L.x + 26, 0); d.scale(-1, 1); d.drawImage(spr, 0, ust); d.restore(); }
-      if (s.mekan === 'yuruyus' && poz === 'cep' && zilAktif && Math.floor(t * 8) % 2 === 0) {
+      if (L.ayakta && poz === 'cep' && zilAktif && Math.floor(t * 8) % 2 === 0) {
         d.fillStyle = '#fff'; const px = L.x - 26 + 38, py = ust + 30 + 44;
         d.fillRect(px - 6, py - 4, 2, 1); d.fillRect(px + 8, py - 4, 2, 1); d.fillRect(px - 8, py - 7, 2, 1); d.fillRect(px + 10, py - 7, 2, 1);
       }

@@ -1,5 +1,6 @@
 import { senaryoUret, seslendir } from './gemini.js';
-import { yerelSenaryo, HAZIR } from './yerel.js';
+import { HAZIR } from './yerel.js';
+import { rastgeleSenaryo } from './uretec.js';
 import { metniCoz, metneCevir, BOS_SABLON } from './senaryoMetin.js';
 import { telefonSesiVar, telefonlaSeslendir, bosluk } from './sesTelefon.js';
 import { planla, cizici, OW, OH, FPS } from './sahne.js';
@@ -15,12 +16,13 @@ const VARSAYILAN = {
   sektorler: 'Restoran, Kebapçı, Diş kliniği, Kuaför, Otel, Veteriner, Oto servis, Pastane',
   hashtagler: '#yapayzeka #esnaf #işletme #girişimci #reels #keşfet',
   ekTalimat: '', palet: 'kirmizi', aiSes: 'Zephyr', sesMotoru: 'telefon', muzik: true,
-  metinModeli: 'gemini-2.5-flash', sesModeli: 'gemini-2.5-flash-preview-tts', adet: 3, kaynak: 'kuyruk', dongu: true,
+  metinModeli: 'gemini-2.5-flash', sesModeli: 'gemini-2.5-flash-preview-tts', adet: 3, kaynak: 'otomatik', dongu: true,
 };
 const oku = (k, v) => { try { return JSON.parse(localStorage.getItem(k)) ?? v; } catch { return v; } };
 const yaz = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { } };
 let ayar = { ...VARSAYILAN, ...oku('nvb_ayar', {}) };
 if (ayar.seslendirme === false && !oku('nvb_ayar', {}).sesMotoru) ayar.sesMotoru = 'kapali';
+if (!ayar.v3) { ayar.kaynak = 'otomatik'; ayar.v3 = true; yaz('nvb_ayar', ayar); }
 let videolar = oku('nvb_videolar', []);
 let kuyruk = oku('nvb_kuyruk', null);
 const oturumBlob = new Map();
@@ -55,7 +57,7 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = () => sayfaAc(b
 function apiDurum() {
   const d = $('#apiDurum');
   const tel = telefonSesiVar();
-  const yazi = ayar.kaynak === 'gemini' ? (ayar.apiKey ? 'Gemini bağlı' : 'API yok') : (navigator.onLine ? 'Çevrimiçi' : 'İnternetsiz mod');
+  const yazi = ayar.kaynak === 'otomatik' ? (navigator.onLine ? 'Otomatik' : 'İnternetsiz mod') : ayar.kaynak === 'gemini' ? (ayar.apiKey ? 'Gemini bağlı' : 'API yok') : (navigator.onLine ? 'Çevrimiçi' : 'İnternetsiz mod');
   d.className = 'durum ' + (ayar.kaynak === 'gemini' && !ayar.apiKey ? 'yok' : 'ok');
   d.querySelector('span').textContent = yazi + (ayar.sesMotoru === 'telefon' && !tel && A ? ' · ses yok' : '');
 }
@@ -75,6 +77,7 @@ function kaynakCiz() {
     b.onclick = () => { ayar.kaynak = b.dataset.k; yaz('nvb_ayar', ayar); kaynakCiz(); apiDurum(); };
   });
   const s = siradakiSen();
+  if (ayar.kaynak === 'otomatik') { $('#siradaki').innerHTML = '🎲 Her videoda yeni isimler, meslekler, konular ve mekanlar. <b>İnternet gerekmez.</b>'; return; }
   $('#siradaki').innerHTML = ayar.kaynak === 'kuyruk'
     ? (s ? `Sıradaki: <b>#${s.no}</b> ${esc(s.baslik || '')}` : (kuyruk.length ? 'Hepsi yapıldı. ' + (ayar.dongu ? 'Baştan başlayacak.' : 'Senaryolar sekmesinden yenisini ekle.') : 'Henüz senaryo yok, Senaryolar sekmesinden ekle.'))
     : (ayar.apiKey ? 'Gemini her video için yeni senaryo yazacak.' : 'Gemini için Ayarlar\'a API anahtarı ekle.');
@@ -100,7 +103,7 @@ $('#kaydet').onclick = () => {
 function disAc(u) { if (A) A.ac(u); else window.open(u, '_blank'); }
 
 // ------------------------------------------------------------ senaryolar sekmesi
-const MEKAN_AD = { kafe: '☕ Kafe', dukkan_onu: '🏪 Dükkan önü', sahil: '🌊 Sahil', araba: '🚗 Araba', yuruyus: '🚶 Yürüyüş' };
+const MEKAN_AD = { kafe: '☕ Kafe', dukkan_onu: '🏪 Dükkan önü', sahil: '🌊 Sahil', araba: '🚗 Araba', yuruyus: '🚶 Yürüyüş', park: '🌳 Park', durak: '🚌 Durak', pazar: '🍅 Pazar', balik: '🎣 Balık' };
 function senListeCiz() {
   const l = $('#senListe');
   if (!kuyruk.length) { l.innerHTML = '<div class="bosListe">Senaryo yok.<br>"+ Yeni yaz" ile başla ✍️</div>'; return; }
@@ -152,7 +155,10 @@ $('#edKaydet').onclick = () => {
   $('#editor').classList.remove('goster'); senListeCiz(); toast('✓ Senaryo kaydedildi');
 };
 $('#yeniSen').onclick = () => editorAc(-1);
-$('#hazirEkle').onclick = () => { HAZIR.forEach(m => kuyrugaEkle(m, false)); kaydetKuyruk(); senListeCiz(); toast(`✓ ${HAZIR.length} hazır senaryo eklendi`); };
+$('#hazirEkle').onclick = () => {
+  for (let i = 0; i < 10; i++) kuyrugaEkle(metneCevir(rastgeleSenaryo(ayar)), false);
+  kaydetKuyruk(); senListeCiz(); toast('🎲 10 yeni rastgele senaryo eklendi. İstersen düzenle.');
+};
 $('#geminiYaz').onclick = async () => {
   if (!ayar.apiKey) return toast('Önce Ayarlar\'dan Gemini API anahtarı ekle.');
   if (!navigator.onLine) return toast('Bunun için internet lazım.');
@@ -183,7 +189,7 @@ const onizCtx = $('#onizleme').getContext('2d');
 $('#olusturBtn').onclick = async () => {
   if (calisiyor) return;
   if (ayar.kaynak === 'gemini' && !ayar.apiKey) toast('API anahtarı yok: senaryolarından devam edilecek.', 4000);
-  if (ayar.kaynak === 'kuyruk' && !siradakiSen() && !(ayar.dongu && kuyruk.length)) return toast('Sırada senaryo yok. Senaryolar sekmesinden ekle.');
+  if (ayar.kaynak === 'kuyruk' && !siradakiSen() && !(ayar.dongu && kuyruk.length)) return toast('Sırada senaryo yok. Senaryolar sekmesinden ekle ya da 🎲 Otomatik seç.');
   calisiyor = true; iptalIstek = false;
   $('#olusturBtn').classList.add('calisiyor');
   $('#ilerleme').classList.add('goster');
@@ -240,10 +246,11 @@ async function birVideo(i) {
       const g = oku('nvb_gecmis', []); g.push(`${s.baslik} — ${s.giris?.[0]?.metin || ''}`); yaz('nvb_gecmis', g.slice(-40));
     } catch (e) { if (/API anahtarı/.test(e.message)) throw e; toast('Gemini hatası, senaryolarından devam: ' + e.message, 5000); }
   }
+  if (!s && ayar.kaynak === 'otomatik') s = rastgeleSenaryo(ayar);
   if (!s) {
     const r = kuyruktanAl();
     if (r) { s = r.s; kayit = r.kayit; }
-    else if (ayar.kaynak === 'gemini') s = yerelSenaryo(ayar, i + Date.now());
+    else if (ayar.kaynak === 'gemini') s = rastgeleSenaryo(ayar);
     else { toast('Sırada senaryo kalmadı.'); return false; }
   }
   if (!s.aciklama) s.aciklama = `${s.baslik}\n${ayar.marka}: ${ayar.urun}`;

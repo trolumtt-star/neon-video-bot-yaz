@@ -4,7 +4,7 @@
 //   BAŞLIK: Trafikte sipariş kaçar mı? 🚗
 //   KANCA: Direksiyondayken sipariş geldi
 //   VURGU: sipariş
-//   MEKAN: araba            (kafe · dukkan · sahil · araba · yuruyus)
+//   MEKAN: araba            (kafe · dukkan · sahil · araba · yuruyus · park · durak · pazar · balik)
 //   ZAMAN: aksam            (sabah · ogle · aksam · gece)
 //   A: Mehmet | Kebapçı | Beyzade Kebap | erkek | orta
 //   B: Ali | Berber | erkek | yasli
@@ -22,7 +22,9 @@
 
 const MEKAN_ESLE = { kafe: 'kafe', 'kafe içi': 'kafe', dukkan: 'dukkan_onu', 'dükkan': 'dukkan_onu', 'dukkan_onu': 'dukkan_onu', 'dükkan önü': 'dukkan_onu',
   sahil: 'sahil', deniz: 'sahil', araba: 'araba', 'araç': 'araba', arac: 'araba', trafik: 'araba',
-  yuruyus: 'yuruyus', 'yürüyüş': 'yuruyus', yurume: 'yuruyus', 'yürüme': 'yuruyus', sokak: 'yuruyus', 'cadde': 'yuruyus' };
+  yuruyus: 'yuruyus', 'yürüyüş': 'yuruyus', yurume: 'yuruyus', 'yürüme': 'yuruyus', sokak: 'yuruyus', 'cadde': 'yuruyus',
+  park: 'park', bahce: 'park', piknik: 'park', durak: 'durak', otobus: 'durak', 'otobus duragi': 'durak',
+  pazar: 'pazar', 'pazar yeri': 'pazar', balik: 'balik', 'balik tutma': 'balik', iskele: 'balik', olta: 'balik' };
 const ZAMAN_ESLE = { sabah: 'sabah', ogle: 'ogle', 'öğle': 'ogle', 'öğlen': 'ogle', ogle_: 'ogle', aksam: 'aksam', 'akşam': 'aksam', gece: 'gece' };
 const kucuk = s => (s || '').toLocaleLowerCase('tr-TR').trim();
 const ascii = s => kucuk(s).replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ö/g, 'o').replace(/ü/g, 'u');
@@ -63,7 +65,7 @@ export function metniCoz(metin) {
       case 'kanca': s.kanca = deger; break;
       case 'vurgu': s.kanca_vurgu = deger; break;
       case 'aciklama': s.aciklama = deger; break;
-      case 'mekan': s.mekan = MEKAN_ESLE[kucuk(deger)] || MEKAN_ESLE[ascii(deger)] || (hatalar.push(`Mekan bilinmiyor: ${deger} (kafe, dukkan, sahil, araba, yuruyus)`), 'dukkan_onu'); break;
+      case 'mekan': s.mekan = MEKAN_ESLE[kucuk(deger)] || MEKAN_ESLE[ascii(deger)] || (hatalar.push(`Mekan bilinmiyor: ${deger} (kafe, dukkan, sahil, araba, yuruyus, park, durak, pazar, balik)`), 'dukkan_onu'); break;
       case 'zaman': s.zaman = ZAMAN_ESLE[kucuk(deger)] || ZAMAN_ESLE[ascii(deger)] || 'ogle'; break;
       case 'a': case 'b': {
         const harf = anahtar.toUpperCase();
@@ -133,7 +135,7 @@ export function metniCoz(metin) {
   return { senaryo: s, hatalar };
 }
 
-const MEKAN_YAZ = { kafe: 'kafe', dukkan_onu: 'dukkan', sahil: 'sahil', araba: 'araba', yuruyus: 'yuruyus' };
+const MEKAN_YAZ = { kafe: 'kafe', dukkan_onu: 'dukkan', sahil: 'sahil', araba: 'araba', yuruyus: 'yuruyus', park: 'park', durak: 'durak', pazar: 'pazar', balik: 'balik' };
 export function metneCevir(s) {
   const kisi = (h, k) => `${h}: ${k.isim} | ${k.meslek} | ${k.isletme_adi} | ${k.cinsiyet} | ${k.yas}`;
   const r = x => `${x.kim}: ${x.metin}`;
