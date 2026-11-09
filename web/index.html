@@ -121,11 +121,19 @@ h2 { font-size: 22px; margin: 6px 4px 16px; font-weight: 900; }
 h2 span { color: var(--red); text-shadow: 0 0 14px var(--red); }
 
 /* ---------- kaynak seçici + senaryolar */
-.kaynak { display: flex; gap: 6px; padding: 5px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; margin-top: 4px; }
+.kaynak { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 5px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; margin-top: 4px; }
 .kaynak button { border: 0; background: none; color: var(--muted); font-weight: 800; font-size: 12.5px; padding: 10px 11px; border-radius: 14px; white-space: nowrap; }
 .kaynak button.secili { background: linear-gradient(135deg, var(--red), #b0002a); color: #fff; box-shadow: 0 0 16px var(--redglow); }
 .siradaki { margin-top: 10px; font-size: 13px; color: var(--muted); text-align: center; max-width: 340px; }
 .siradaki b { color: #fff; }
+.sinemaPanel { display: none; width: 100%; max-width: 380px; margin-top: 10px; }
+.sinemaPanel.goster { display: block; }
+.sinemaPanel textarea { width: 100%; min-height: 96px; background: #0b090b; border: 1px solid var(--red); box-shadow: 0 0 16px rgba(255,23,68,.2); color: #fff; border-radius: 16px; padding: 13px; font-size: 14.5px; line-height: 1.45; outline: none; resize: vertical; }
+.ozelGun { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 9px; scrollbar-width: none; }
+.ozelGun::-webkit-scrollbar { display: none; }
+.ozelGun button { flex: none; border: 1px solid var(--line); background: var(--panel2); color: #fff; font-weight: 700; font-size: 12.5px; padding: 8px 12px; border-radius: 999px; }
+.ozelGun button.secili { border-color: var(--red); box-shadow: 0 0 12px var(--redglow); }
+.sinemaNot { font-size: 12px; color: var(--muted); margin-top: 7px; line-height: 1.45; text-align: center; }
 .ust-butonlar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
 .ust-butonlar .btn { flex: 1; min-width: 100px; padding: 12px 10px; font-size: 13px; }
 .sen { display: flex; gap: 12px; align-items: stretch; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 12px; margin-bottom: 10px; animation: gir .3s ease; }
@@ -172,7 +180,12 @@ details.yardim code { color: var(--red2); }
     <section class="sayfa aktif" id="s-olustur">
       <div class="sahne">
         <button class="buyuk" id="olusturBtn"><div class="halka"></div><div class="ic"><span id="olusturYazi">OLUŞTUR</span><small id="olusturAlt">dokun ve başlasın</small></div></button>
-        <div class="kaynak" id="kaynak"><button data-k="otomatik">🎲 Otomatik</button><button data-k="kuyruk">📝 Senaryolarım</button><button data-k="gemini">✨ Gemini</button></div>
+        <div class="kaynak" id="kaynak"><button data-k="otomatik">🎲 Otomatik</button><button data-k="kuyruk">📝 Senaryolarım</button><button data-k="gemini">✨ Gemini</button><button data-k="sinema">🎬 Sinema 3D</button></div>
+        <div class="sinemaPanel" id="sinemaPanel">
+          <div class="ozelGun" id="ozelGun"></div>
+          <textarea id="sinemaIstem" placeholder="Videoyu anlat… Örn: Çanakkale'de cephede savaşırken askerler siperde bekliyor, top sesleri yükseliyor, sonra hücuma kalkıyorlar."></textarea>
+          <div class="sinemaNot">Gemini anahtarın varsa hikâyeni sahne sahne yazar; yoksa özel gün şablonlarından kurar. Videoyu telefonun 3D çizer, müziğini kendisi besteler.</div>
+        </div>
         <div class="siradaki" id="siradaki"></div>
         <div class="adet" id="adet"></div>
         <div class="ipucu" id="ipucu">Otomatik: her seferinde yepyeni senaryo kurar, internetsiz. Senaryolarım: yazdıklarını sırayla yapar. Gemini: yapay zeka yazar (internet ister). Ekranı kapatabilirsin, üretim bildirimde devam eder.</div>

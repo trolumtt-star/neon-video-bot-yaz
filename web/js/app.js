@@ -6,11 +6,14 @@ import { telefonSesiVar, telefonlaSeslendir, bosluk } from './sesTelefon.js';
 import { planla, cizici, OW, OH, FPS } from './sahne.js';
 import { miksle, muzik } from './ses.js';
 import { kodla } from './kodla.js';
+import { planGemini, planYerel, planHazirla, OZEL_GUNLER } from './sinemaPlan.js';
+import { cizici as sinemaCizici, OW as SOW, OH as SOH, FPS as SFPS } from './sinemaMotor.js';
+import { sinemaSesi } from './sinemaSes.js';
 
 const $ = s => document.querySelector(s);
 const A = window.Android || null;
 const VARSAYILAN = {
-  apiKey: '', marka: 'Yankı AI',
+  apiKey: '', marka: 'Dinlio AI', sinemaIstem: '',
   urun: 'İşletmelerin telefonlarını 7/24 açan, Türkçe konuşan yapay zeka asistanı. Sipariş, randevu ve rezervasyon alır, soruları yanıtlar; her görüşme anında işletme sahibinin paneline düşer. Hiçbir arama kaçmaz.',
   slogan: 'Artık siz dinlemeyin, biz dinleyelim.', cta: 'Hemen talep gönderin', iletisim: '',
   sektorler: 'Restoran, Kebapçı, Diş kliniği, Kuaför, Otel, Veteriner, Oto servis, Pastane',
@@ -23,6 +26,7 @@ const yaz = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catc
 let ayar = { ...VARSAYILAN, ...oku('nvb_ayar', {}) };
 if (ayar.seslendirme === false && !oku('nvb_ayar', {}).sesMotoru) ayar.sesMotoru = 'kapali';
 if (!ayar.v3) { ayar.kaynak = 'otomatik'; ayar.v3 = true; yaz('nvb_ayar', ayar); }
+if (ayar.marka === 'Yankı AI') { ayar.marka = 'Dinlio AI'; yaz('nvb_ayar', ayar); }
 let videolar = oku('nvb_videolar', []);
 let kuyruk = oku('nvb_kuyruk', null);
 const oturumBlob = new Map();
@@ -57,7 +61,7 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = () => sayfaAc(b
 function apiDurum() {
   const d = $('#apiDurum');
   const tel = telefonSesiVar();
-  const yazi = ayar.kaynak === 'otomatik' ? (navigator.onLine ? 'Otomatik' : 'İnternetsiz mod') : ayar.kaynak === 'gemini' ? (ayar.apiKey ? 'Gemini bağlı' : 'API yok') : (navigator.onLine ? 'Çevrimiçi' : 'İnternetsiz mod');
+  const yazi = ayar.kaynak === 'sinema' ? (ayar.apiKey && navigator.onLine ? 'Sinema · Gemini' : 'Sinema · şablon') : ayar.kaynak === 'otomatik' ? (navigator.onLine ? 'Otomatik' : 'İnternetsiz mod') : ayar.kaynak === 'gemini' ? (ayar.apiKey ? 'Gemini bağlı' : 'API yok') : (navigator.onLine ? 'Çevrimiçi' : 'İnternetsiz mod');
   d.className = 'durum ' + (ayar.kaynak === 'gemini' && !ayar.apiKey ? 'yok' : 'ok');
   d.querySelector('span').textContent = yazi + (ayar.sesMotoru === 'telefon' && !tel && A ? ' · ses yok' : '');
 }
@@ -76,6 +80,8 @@ function kaynakCiz() {
     b.classList.toggle('secili', b.dataset.k === ayar.kaynak);
     b.onclick = () => { ayar.kaynak = b.dataset.k; yaz('nvb_ayar', ayar); kaynakCiz(); apiDurum(); };
   });
+  $('#sinemaPanel').classList.toggle('goster', ayar.kaynak === 'sinema');
+  if (ayar.kaynak === 'sinema') { $('#siradaki').innerHTML = '🎬 Yazdığın hikâyeyi <b>3D filme</b> çevirir: mekan, karakterler, kamera, müzik.'; return; }
   const s = siradakiSen();
   if (ayar.kaynak === 'otomatik') { $('#siradaki').innerHTML = '🎲 Her videoda yeni isimler, meslekler, konular ve mekanlar. <b>İnternet gerekmez.</b>'; return; }
   $('#siradaki').innerHTML = ayar.kaynak === 'kuyruk'
@@ -189,6 +195,7 @@ const onizCtx = $('#onizleme').getContext('2d');
 $('#olusturBtn').onclick = async () => {
   if (calisiyor) return;
   if (ayar.kaynak === 'gemini' && !ayar.apiKey) toast('API anahtarı yok: senaryolarından devam edilecek.', 4000);
+  if (ayar.kaynak === 'sinema' && !($('#sinemaIstem').value.trim())) return toast('Önce videoyu anlat ya da bir özel gün seç.');
   if (ayar.kaynak === 'kuyruk' && !siradakiSen() && !(ayar.dongu && kuyruk.length)) return toast('Sırada senaryo yok. Senaryolar sekmesinden ekle ya da 🎲 Otomatik seç.');
   calisiyor = true; iptalIstek = false;
   $('#olusturBtn').classList.add('calisiyor');
@@ -198,11 +205,11 @@ $('#olusturBtn').onclick = async () => {
   if (A?.ekranAcik) A.ekranAcik(true);
   let basarili = 0;
   try {
-    await document.fonts.load('800 50px Inter'); await document.fonts.load('600 40px Inter'); await document.fonts.load('700 40px Inter');
+    await document.fonts.load('800 50px Inter'); await document.fonts.load('600 40px Inter'); await document.fonts.load('700 40px Inter'); await document.fonts.load('500 40px Inter');
     for (let i = 0; i < ayar.adet && !iptalIstek; i++) {
       $('#sayac').textContent = `VİDEO ${i + 1} / ${ayar.adet}`;
       $('#olusturYazi').textContent = `${i + 1}/${ayar.adet}`;
-      try { if (await birVideo(i)) basarili++; else break; }
+      try { if (await (ayar.kaynak === 'sinema' ? birSinema(i) : birVideo(i))) basarili++; else break; }
       catch (e) {
         if (e.message === 'IPTAL') break;
         console.error(e);
@@ -306,6 +313,65 @@ async function birVideo(i) {
   return true;
 }
 
+// ------------------------------------------------------------ SİNEMA 3D
+function ozelGunCiz() {
+  const k = $('#ozelGun'); k.innerHTML = '';
+  for (const g of OZEL_GUNLER) {
+    const b = document.createElement('button'); b.textContent = g.ad;
+    b.onclick = () => { $('#sinemaIstem').value = g.istem; ayar.sinemaIstem = g.istem; yaz('nvb_ayar', ayar); k.querySelectorAll('button').forEach(x => x.classList.toggle('secili', x === b)); };
+    k.appendChild(b);
+  }
+  $('#sinemaIstem').value = ayar.sinemaIstem || '';
+  $('#sinemaIstem').oninput = e => { ayar.sinemaIstem = e.target.value; yaz('nvb_ayar', ayar); };
+}
+async function birSinema(i) {
+  adimlariSifirla(); bar(0, 'Sahne planı yazılıyor');
+  $('#baslikMini').textContent = 'Sahneler planlanıyor…';
+  adim('senaryo', 'aktif');
+  const istem = $('#sinemaIstem').value.trim();
+  let ham = null;
+  if (ayar.apiKey && navigator.onLine) {
+    try { ham = await planGemini(ayar, istem, i, m => { $('#olusturAlt').textContent = m; }); }
+    catch (e) { if (/API anahtarı|API key/i.test(e.message)) throw e; toast('Gemini planı alınamadı, şablonla devam: ' + e.message, 5000); }
+  }
+  if (!ham) ham = planYerel(istem, ayar, i);
+  const plan = planHazirla(ham, ayar, (Date.now() + i * 7919) % 100000);
+  let aciklama = plan.aciklama || plan.baslik;
+  if (ayar.hashtagler && !aciklama.includes('#')) aciklama += `\n\n${ayar.hashtagler}`;
+  $('#baslikMini').textContent = '🎬 ' + plan.baslik;
+  adim('senaryo', 'tamam');
+  if (iptalIstek) throw new Error('IPTAL');
+  adim('ses', 'aktif'); $('#olusturAlt').textContent = 'müzik besteleniyor';
+  await bosluk();
+  const sesSig = await sinemaSesi(plan);
+  adim('ses', 'tamam');
+  if (iptalIstek) throw new Error('IPTAL');
+  adim('video', 'aktif'); $('#olusturAlt').textContent = '3D çiziliyor';
+  const ciz = sinemaCizici(plan);
+  const blob = await kodla({
+    sure: plan.sure, fps: SFPS, genislik: SOW, yukseklik: SOH, kare: ciz.kare, ses: sesSig,
+    iptal: () => iptalIstek,
+    ilerleme: (p, tv) => {
+      bar(p, `Film ${i + 1}/${ayar.adet} çiziliyor`); $('#olusturAlt').textContent = `%${Math.round(p * 100)}`;
+      if (tv && !document.hidden) onizCtx.drawImage(tv, 0, 0, 270, 480);
+    },
+  });
+  adim('video', 'tamam');
+  const kap = document.createElement('canvas'); kap.width = 180; kap.height = 320;
+  const ks = plan.sahneler.find(s => s.mekan !== 'siyah') || plan.sahneler[0];
+  kap.getContext('2d').drawImage(ciz.kare(ks.bas + ks.sure * .55), 0, 0, 180, 320);
+  const kapak = kap.toDataURL('image/jpeg', .72);
+  adim('kayit', 'aktif');
+  const ad = `Sinema_${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}_${i + 1}.${blob.type.includes('webm') ? 'webm' : 'mp4'}`;
+  const uri = await kaydet(blob, ad);
+  const id = Date.now() + '_' + i;
+  oturumBlob.set(id, URL.createObjectURL(blob));
+  videolar.unshift({ id, baslik: '🎬 ' + plan.baslik, aciklama, tarih: Date.now(), uri, kapak, ad });
+  yaz('nvb_videolar', videolar.slice(0, 60));
+  adim('kayit', 'tamam');
+  return true;
+}
+
 async function kaydet(blob, ad) {
   if (!A) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = ad; a.click(); return ''; }
   if (!A.dosyaBasla(ad, blob.type)) throw new Error('Galeriye yazılamadı');
@@ -370,4 +436,4 @@ window.geriTusu = () => {
   return false;
 };
 
-apiDurum(); adetCiz(); ayarDoldur(); kaynakCiz();
+apiDurum(); adetCiz(); ayarDoldur(); ozelGunCiz(); kaynakCiz();
