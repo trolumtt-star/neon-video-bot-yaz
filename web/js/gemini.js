@@ -9,7 +9,7 @@ const TEMALAR = [
   'gece geç saatte gelen sipariş', 'bayram öncesi yoğunluk', 'esnaf lokantasında öğle', 'sabah ilk çay', 'kaçan müşteriler',
   'telefonu açamamaktan şikayet', 'emekli olunca ne yapacağız', 'zam gelen elektrik faturası', 'yeni çırak', 'Google yorumları',
 ];
-const MEKANLAR = ['kafe', 'dukkan_onu', 'sahil'];
+const MEKANLAR = ['kafe', 'dukkan_onu', 'sahil', 'araba', 'yuruyus'];
 const ZAMANLAR = ['sabah', 'ogle', 'aksam', 'gece'];
 
 const S = (t, extra = {}) => ({ type: t, ...extra });
@@ -73,7 +73,7 @@ export async function senaryoUret(ayar, gecmis = [], durum = () => { }) {
   const tema = TEMALAR[Math.floor(Math.random() * TEMALAR.length)];
   const sektorler = (ayar.sektorler || '').split(',').map(s => s.trim()).filter(Boolean);
   const sektor = sektorler[Math.floor(Math.random() * sektorler.length)] || 'restoran';
-  const mekan = MEKANLAR[Math.floor(Math.random() * 3)], zaman = ZAMANLAR[Math.floor(Math.random() * 4)];
+  const mekan = MEKANLAR[Math.floor(Math.random() * MEKANLAR.length)], zaman = ZAMANLAR[Math.floor(Math.random() * 4)];
   const istem = `Sen Instagram Reels/TikTok için viral, komik ve samimi kısa reklam senaryoları yazan bir Türk metin yazarısın.
 
 ÜRÜN: ${ayar.marka}
@@ -92,7 +92,7 @@ KURALLAR:
 - Doğal, sokak ağzı ama saygılı, gerçek esnaf Türkçesi. Esprili ol, klişeden kaç.
 - HER REPLİK EN FAZLA 12 KELİME. Kısa ve vurucu.
 - isimler gerçekçi Türk isimleri. isletme_adi kısa olsun (ör. "Beyzade Kebap").
-- mekan: "${mekan}", zaman: "${zaman}" kullan.
+- mekan: "${mekan}", zaman: "${zaman}" kullan. (kafe=kafede oturuyorlar, dukkan_onu=dükkan önünde taburede çay, sahil=sahilde çay bahçesi, araba=arabada trafikte gidiyorlar (B şoför, A yanında), yuruyus=sokakta birlikte yürüyorlar). Sohbet bu ortama uygun olsun.
 - kanca: videonun ilk 2 saniyesinde ekranda yazacak merak uyandırıcı yazı, en fazla 7 kelime. kanca_vurgu: kancadaki tek bir kelime (vurgulanacak).
 - sonuc: çağrının sonucu kartı (tur: "Yeni sipariş" | "Randevu" | "Rezervasyon" | "Teklif"; baslik: kısa detay; detay: saat/adres/kişi gibi).
 - panel_kartlari: panelde görünen bugünkü diğer 3 kayıt (aynı sektöre uygun, isimli).

@@ -35,7 +35,14 @@ jobs:
         working-directory: android
         env:
           VERSION_CODE: ${{ github.run_number }}
-        run: gradle assembleRelease --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          gradle assembleRelease --no-daemon 2>&1 | tee ../derleme.log
+
+      - name: Derleme hatalarını göster
+        if: failure()
+        run: |
+          grep -E "error:|e: |What went wrong|> " derleme.log | head -30 | while IFS= read -r l; do echo "::error::$l"; done
 
       - name: APK'yı adlandır
         run: cp android/app/build/outputs/apk/release/app-release.apk NeonVideoBot.apk

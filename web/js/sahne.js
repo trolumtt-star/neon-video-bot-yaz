@@ -1,6 +1,6 @@
 // Zaman çizelgesi + kare çizimi (1080x1920 dikey)
 import {
-  DW, DH, KOLTUK, AYAK_Y, TELEFON, rng, tuval, arkaPlan, dekor, masa, sandalye, gorunumUret, karakterCiz, unlem,
+  DW, DH, rng, tuval, arkaPlan, dekor, masa, sandalye, gorunumUret, karakterCiz, unlem, duzen, onPlan, arabaSarsinti,
 } from './piksel.js';
 import { SR, zarf, efekt, telefonFiltre } from './ses.js';
 
@@ -31,9 +31,8 @@ export function planla(s, sesler, ayar) {
     if (!sig) sfx.push({ t: t0, tur: 'pop' });
     return k;
   };
-  const kamera = { genis: { cx: 135, cy: 350, z: 1.45 }, orta: { cx: 135, cy: 330, z: 1.65 },
-    A: { cx: KOLTUK.A + 20, cy: 330, z: 2.5 }, B: { cx: KOLTUK.B - 20, cy: 330, z: 2.5 },
-    tel: { cx: TELEFON.x + 7, cy: TELEFON.y, z: 5.2 } };
+  const kamera = duzen(s.mekan).kam;
+  const masaVar = !!duzen(s.mekan).masa;
 
   // 1) giriş
   cekim.push({ tip: 'mekan', t0: 0, t1: 1.1, kam: kamera.genis, it: 1.04 });
@@ -49,7 +48,7 @@ export function planla(s, sesler, ayar) {
   sfx.push({ t: zilT, tur: 'zil' }, { t: zilT, tur: 'whoosh' });
   cekim.push({ tip: 'mekan', t0: t, t1: t + 1.5, kam: kamera.tel, it: 1.08, glitch: true });
   t += 1.5;
-  const zk = ekle('A', s.zil_tepki.metin, dSes(), t + 0.1, { poz: 'cay' });
+  const zk = ekle('A', s.zil_tepki.metin, dSes(), t + 0.1, { poz: masaVar ? 'cay' : 'jest' });
   cekim.push({ tip: 'mekan', t0: t, t1: zk.t1 + 0.35, kam: kamera.A, it: 1.04 });
   t = zk.t1 + 0.35;
   sfx.push({ t: zilT + 2.7, tur: 'zil' });
@@ -128,13 +127,19 @@ export function cizici(plan) {
   const aktifKonusma = (t, f = () => true) => plan.konus.find(k => t >= k.t0 && t < k.t1 + 0.05 && f(k));
   const sonKonusma = (t, f) => { let r = null; for (const k of plan.konus) if (k.t0 <= t && f(k)) r = k; return r; };
 
+  const D = duzen(s.mekan);
+  const sprYuk = kim => (D[kim].ayakta ? 178 : 134);
+  const basUst = kim => D[kim].taban - sprYuk(kim) + 3;
   function dunyaCiz(t, c) {
     d.drawImage(arka, 0, 0);
     dekor(d, s.mekan, s.zaman, t, tohum);
-    sandalye(d, KOLTUK.A, 1, s.mekan);
-    sandalye(d, KOLTUK.B, -1, s.mekan);
+    if (D.masa) { sandalye(d, D.A.x, 1, s.mekan); sandalye(d, D.B.x, -1, s.mekan); }
+    const zilAktif = t >= plan.zilT && t < plan.zilBitis;
+    const sars = s.mekan === 'araba' ? arabaSarsinti(t) : 0;
     const konusan = aktifKonusma(t, k => !k.telefon && !k.altyazi);
-    for (const kim of ['A', 'B']) {
+    const sira = s.mekan === 'yuruyus' ? ['B', 'A'] : ['A', 'B'];
+    for (const kim of sira) {
+      const L = D[kim];
       const g = plan.gorunum[kim];
       const ben = konusan?.kim === kim;
       const sid = kim === 'A' ? 0 : 1.7;
@@ -147,18 +152,24 @@ export function cizici(plan) {
       let goz = kirp ? 'kapali' : 'acik', poz = 'dinlen';
       if (ben) { poz = konusan.poz || 'dinlen'; if (konusan.goz) goz = konusan.goz; }
       if (c.unlem && kim === 'B') { goz = 'saskin'; poz = 'saskin'; }
+      if (s.mekan === 'yuruyus' && kim === 'A' && (poz === 'dinlen')) poz = 'cep';
+      if (L.sofor && poz !== 'saskin') poz = 'direksiyon';
       if (c.telefonElde && kim === 'A') poz = 'telefon';
       if (c.gulmeT && t > c.gulmeT) { goz = 'gulen'; agiz = Math.floor(t * 8) % 2 + 1; }
       const bob = (Math.sin(t * (ben ? 7 : 2.2) + sid) > (ben ? 0.2 : 0.75)) ? 1 : 0;
-      const spr = karakterCiz(g, { agiz, goz, poz, bob, ekran: pal[0] });
-      const ust = AYAK_Y - 134;
-      if (kim === 'A') d.drawImage(spr, KOLTUK.A - 26, ust);
-      else { d.save(); d.translate(KOLTUK.B + 26, 0); d.scale(-1, 1); d.drawImage(spr, 0, ust); d.restore(); }
+      const ekran = poz === 'cep' ? (zilAktif && Math.floor(t * 8) % 2 === 0 ? pal[0] : '#22232c') : pal[0];
+      const spr = karakterCiz(g, { agiz, goz, poz, bob, ekran, ayakta: !!L.ayakta, adim: t * 1.7 + (kim === 'B' ? 0.5 : 0) });
+      const ust = L.taban - spr.height + sars;
+      if (L.yuz === 1) d.drawImage(spr, L.x - 26, ust);
+      else { d.save(); d.translate(L.x + 26, 0); d.scale(-1, 1); d.drawImage(spr, 0, ust); d.restore(); }
+      if (s.mekan === 'yuruyus' && poz === 'cep' && zilAktif && Math.floor(t * 8) % 2 === 0) {
+        d.fillStyle = '#fff'; const px = L.x - 26 + 38, py = ust + 30 + 44;
+        d.fillRect(px - 6, py - 4, 2, 1); d.fillRect(px + 8, py - 4, 2, 1); d.fillRect(px - 8, py - 7, 2, 1); d.fillRect(px + 10, py - 7, 2, 1);
+      }
     }
-    const zilAktif = t >= plan.zilT && t < plan.zilBitis;
-    const telefonYok = !!c.telefonElde;
-    masa(d, t, s.mekan, zilAktif, zilAktif, telefonYok);
-    if (c.unlem && t - c.t0 > 0.3) unlem(d, KOLTUK.B - 34, 276, t);
+    if (D.masa) masa(d, t, s.mekan, zilAktif, zilAktif, !!c.telefonElde);
+    onPlan(d, s.mekan, t, { zil: zilAktif, ekran: pal[0], telefonYok: !!c.telefonElde, gece: s.zaman === 'gece' });
+    if (c.unlem && t - c.t0 > 0.3) unlem(d, D.B.x + (D.B.yuz === 1 ? 30 : -34), basUst('B') - 12 + sars, t);
   }
 
   function kameraHesap(c, t) {
@@ -183,8 +194,8 @@ export function cizici(plan) {
     for (const kim of ['A', 'B']) {
       const k = sonKonusma(t, q => q.kim === kim && !q.telefon && !q.altyazi && t < q.t1 + 0.35 && q.t0 >= c.t0 - 0.01);
       if (!k) continue;
-      const hx = kim === 'A' ? KOLTUK.A + 6 : KOLTUK.B - 6;
-      const [sx, sy] = ekran(hx, AYAK_Y - 134);
+      const hx = D[kim].x + D[kim].yuz * 6;
+      const [sx, sy] = ekran(hx, basUst(kim) - 3);
       balon(o, k, t, sx, sy, kim, K);
     }
     if (c.glitch) glitch(t - c.t0);
@@ -262,7 +273,7 @@ export function cizici(plan) {
       let x = -tw / 2;
       for (const w of kelimeler) {
         const temiz = w.toLocaleLowerCase('tr-TR').replace(/[^\p{L}\p{N}]/gu, '');
-        const vur = vurgu && temiz && vurgu.includes(temiz);
+        const vur = !!temiz && vurgu.split(/\s+/).some(v => v.replace(/[^\p{L}\p{N}]/gu, '') === temiz);
         o.lineWidth = 12; o.strokeStyle = '#000'; o.lineJoin = 'round';
         o.strokeText(w, x, y);
         if (vur) { o.shadowColor = pal[0]; o.shadowBlur = 30; o.fillStyle = pal[0]; }

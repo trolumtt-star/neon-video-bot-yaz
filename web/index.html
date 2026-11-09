@@ -120,6 +120,38 @@ nav button.aktif svg { filter: drop-shadow(0 0 6px var(--red)); color: var(--red
 h2 { font-size: 22px; margin: 6px 4px 16px; font-weight: 900; }
 h2 span { color: var(--red); text-shadow: 0 0 14px var(--red); }
 
+/* ---------- kaynak seçici + senaryolar */
+.kaynak { display: flex; gap: 6px; padding: 5px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; margin-top: 4px; }
+.kaynak button { border: 0; background: none; color: var(--muted); font-weight: 800; font-size: 13px; padding: 10px 14px; border-radius: 14px; }
+.kaynak button.secili { background: linear-gradient(135deg, var(--red), #b0002a); color: #fff; box-shadow: 0 0 16px var(--redglow); }
+.siradaki { margin-top: 10px; font-size: 13px; color: var(--muted); text-align: center; max-width: 340px; }
+.siradaki b { color: #fff; }
+.ust-butonlar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.ust-butonlar .btn { flex: 1; min-width: 100px; padding: 12px 10px; font-size: 13px; }
+.sen { display: flex; gap: 12px; align-items: stretch; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 12px; margin-bottom: 10px; animation: gir .3s ease; }
+.sen.yapildi { opacity: .55; }
+.sen.siradaki-sen { border-color: var(--red); box-shadow: 0 0 18px rgba(255,23,68,.25); }
+.sen .no { width: 44px; flex-shrink: 0; border-radius: 12px; display: grid; place-items: center; font-weight: 900; font-size: 18px; background: #1a1216; color: var(--red); text-shadow: 0 0 10px var(--red); }
+.sen .ic { flex: 1; min-width: 0; }
+.sen h4 { margin: 0 0 4px; font-size: 14px; line-height: 1.3; }
+.sen .etk { font-size: 11px; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; }
+.sen .etk span { border: 1px solid var(--line); border-radius: 99px; padding: 2px 8px; }
+.sen .etk span.ok { color: var(--green); border-color: rgba(34,227,154,.4); }
+.sen .etk span.hata { color: var(--red); border-color: var(--red); }
+.sen .ek { display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
+.sen .ek button { border: 1px solid var(--line); background: var(--panel2); color: #fff; border-radius: 10px; padding: 6px 10px; font-size: 12px; font-weight: 700; }
+.editor { position: fixed; inset: 0; z-index: 25; background: #050505; display: none; flex-direction: column; padding: calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom)); gap: 10px; }
+.editor.goster { display: flex; animation: gir .25s ease; }
+.editor .bas { display: flex; align-items: center; gap: 10px; }
+.editor .bas b { font-size: 18px; flex: 1; }
+.editor textarea { flex: 1; width: 100%; background: #0b090b; border: 1px solid var(--red); box-shadow: 0 0 18px rgba(255,23,68,.2); color: #fff; border-radius: 16px; padding: 14px; font: 500 14px/1.55 ui-monospace, Menlo, monospace; resize: none; outline: none; }
+.editor .durumYazi { font-size: 13px; min-height: 18px; color: var(--muted); white-space: pre-line; max-height: 90px; overflow: auto; }
+.editor .durumYazi.hata { color: var(--red2); } .editor .durumYazi.ok { color: var(--green); }
+.editor .alt { display: flex; gap: 8px; } .editor .alt .btn { flex: 1; }
+details.yardim { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; font-size: 13px; color: var(--muted); }
+details.yardim summary { color: #fff; font-weight: 700; }
+details.yardim code { color: var(--red2); }
+
 /* ---------- bildirim + oynatıcı */
 .toast { position: fixed; left: 50%; top: calc(18px + env(safe-area-inset-top)); transform: translate(-50%, -150%); z-index: 20; background: #120d10; border: 1px solid var(--red); box-shadow: 0 0 24px var(--redglow); padding: 13px 18px; border-radius: 16px; font-size: 14px; font-weight: 600; max-width: 90%; transition: .35s cubic-bezier(.2,1.4,.4,1); }
 .toast.goster { transform: translate(-50%, 0); }
@@ -140,8 +172,10 @@ h2 span { color: var(--red); text-shadow: 0 0 14px var(--red); }
     <section class="sayfa aktif" id="s-olustur">
       <div class="sahne">
         <button class="buyuk" id="olusturBtn"><div class="halka"></div><div class="ic"><span id="olusturYazi">OLUŞTUR</span><small id="olusturAlt">dokun ve başlasın</small></div></button>
+        <div class="kaynak" id="kaynak"><button data-k="kuyruk">📝 Senaryolarım</button><button data-k="gemini">✨ Gemini</button></div>
+        <div class="siradaki" id="siradaki"></div>
         <div class="adet" id="adet"></div>
-        <div class="ipucu" id="ipucu">Gemini her video için yeni bir esnaf sohbeti yazar, seslendirir; uygulama videoyu çizip galeriye kaydeder.</div>
+        <div class="ipucu" id="ipucu">Senaryolarım: yazdığın senaryoları sırayla, internetsiz üretir. Gemini: her seferinde yeni senaryo yazar (internet ister). Ekranı kapatabilirsin, üretim bildirimde devam eder.</div>
         <div class="kart ilerleme" id="ilerleme">
           <div class="sayac" id="sayac">VİDEO 1 / 3</div>
           <div class="onizleme">
@@ -158,6 +192,17 @@ h2 span { color: var(--red); text-shadow: 0 0 14px var(--red); }
           <button class="btn tam" id="durdurBtn">Durdur</button>
         </div>
       </div>
+    </section>
+    <!-- SENARYOLAR -->
+    <section class="sayfa" id="s-senaryolar">
+      <h2>Senaryolarım <span>✎</span></h2>
+      <div class="ust-butonlar">
+        <button class="btn kirmizi" id="yeniSen">+ Yeni yaz</button>
+        <button class="btn" id="hazirEkle">Hazır örnekler</button>
+        <button class="btn" id="geminiYaz">✨ Gemini 5 tane yazsın</button>
+      </div>
+      <div class="anahtarlar" style="margin-bottom:12px">Hepsi bitince başa dön <button class="anahtar-sw" id="sw-dongu"></button></div>
+      <div id="senListe"></div>
     </section>
     <!-- VİDEOLAR -->
     <section class="sayfa" id="s-videolar">
@@ -183,7 +228,7 @@ h2 span { color: var(--red); text-shadow: 0 0 14px var(--red); }
         <div class="alan"><label>Video renkleri</label><select id="palet"><option value="kirmizi">Neon kırmızı</option><option value="mor">Mor · mavi</option><option value="yesil">Yeşil · mavi</option></select></div>
         <div class="alan"><label>Yapay zeka sesi</label><select id="aiSes"><option>Zephyr</option><option>Kore</option><option>Aoede</option><option>Leda</option><option>Charon</option><option>Puck</option><option>Orus</option></select></div>
       </div>
-      <div class="anahtarlar">Gemini seslendirme <button class="anahtar-sw" id="sw-seslendirme"></button></div>
+      <div class="alan"><label>Seslendirme</label><select id="sesMotoru"><option value="telefon">Telefonun sesi (internetsiz)</option><option value="gemini">Gemini sesi (internetli, daha doğal)</option><option value="kapali">Sessiz (sadece yazı)</option></select></div>
       <div class="anahtarlar">Arka plan müziği <button class="anahtar-sw" id="sw-muzik"></button></div>
       <div class="alan" style="margin-top:14px"><label>Metin modeli (gelişmiş)</label><input id="metinModeli"></div>
       <div class="alan"><label>Ses modeli (gelişmiş)</label><input id="sesModeli"></div>
@@ -192,9 +237,22 @@ h2 span { color: var(--red); text-shadow: 0 0 14px var(--red); }
   </main>
   <nav>
     <button class="aktif" data-s="olustur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg>Oluştur</button>
+    <button data-s="senaryolar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h12l4 4v12H4z"/><path d="M8 11h8M8 15h8M8 7h5"/></svg>Senaryolar</button>
     <button data-s="videolar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9l5 3-5 3z" fill="currentColor"/></svg>Videolar</button>
     <button data-s="ayarlar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Ayarlar</button>
   </nav>
+</div>
+<div class="editor" id="editor">
+  <div class="bas"><b id="editorBaslik">Senaryo</b><button class="btn" id="edIptal">Kapat</button></div>
+  <details class="yardim"><summary>Nasıl yazılır?</summary>
+    <p><code>A: İsim | Meslek | İşletme | erkek/kadin | genc/orta/yasli</code> karakteri tanımlar.<br>
+    <code>A: metin</code> / <code>B: metin</code> konuşmadır. <code>ZİL</code> telefonun çaldığı an.<br>
+    <code>MÜŞTERİ:</code> ve <code>AI:</code> telefondaki görüşme. <code>SONUÇ: Tür | Başlık | Detay</code> sonuç kartı.<br>
+    <code>B: Nasıl ya?!</code> şaşırma, <code>PANEL</code> sonrası anlatım, son satır kapanış.<br>
+    <code>MEKAN:</code> kafe · dukkan · sahil · araba · yuruyus — <code>ZAMAN:</code> sabah · ogle · aksam · gece</p></details>
+  <textarea id="edMetin" spellcheck="false"></textarea>
+  <div class="durumYazi" id="edDurum"></div>
+  <div class="alt"><button class="btn" id="edKontrol">Kontrol et</button><button class="btn kirmizi" id="edKaydet">Kaydet</button></div>
 </div>
 <div class="toast" id="toast"></div>
 <div class="oynatici" id="oynatici"><video id="video" controls playsinline></video><button class="btn kirmizi" id="kapatOyn">Kapat</button></div>

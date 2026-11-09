@@ -3,6 +3,11 @@
 import { SR } from './ses.js';
 
 const bekle = ms => new Promise(r => setTimeout(r, ms));
+// Arka planda (ekran kapalı) zamanlayıcılar yavaşlatılır; MessageChannel yavaşlatılmaz
+const bosluk = () => new Promise(r => { const c = new MessageChannel(); c.port1.onmessage = () => r(); c.port2.postMessage(0); });
+const kuyrukBekle = enc => ('ondequeue' in enc)
+  ? new Promise(r => { const f = () => { enc.removeEventListener('dequeue', f); r(); }; enc.addEventListener('dequeue', f); setTimeout(f, 50); })
+  : bosluk();
 
 export async function kodla({ sure, fps, genislik, yukseklik, kare, ses, ilerleme = () => { }, iptal = () => false }) {
   if (typeof VideoEncoder !== 'undefined') {
@@ -54,8 +59,8 @@ async function webcodecs({ sure, fps, genislik, yukseklik, kare, ses, ilerleme, 
     const f = new VideoFrame(bmp, { timestamp: Math.round(i * 1e6 / fps), duration: Math.round(1e6 / fps) });
     venc.encode(f, { keyFrame: i % (fps * 2) === 0 });
     f.close(); bmp.close();
-    while (venc.encodeQueueSize > 4) await bekle(2);
-    if (i % 6 === 0) { ilerleme(i / n, tuval); await bekle(0); }
+    while (venc.encodeQueueSize > 4) await kuyrukBekle(venc);
+    if (i % 6 === 0) { ilerleme(i / n, tuval); await bosluk(); }
   }
   await venc.flush(); venc.close();
   if (hata) throw hata;
@@ -77,7 +82,7 @@ async function webcodecs({ sure, fps, genislik, yukseklik, kare, ses, ilerleme, 
       const parca = ses.slice(i, Math.min(ses.length, i + P));
       const ad = new AudioData({ format: 'f32-planar', sampleRate: SR, numberOfFrames: parca.length, numberOfChannels: 1, timestamp: Math.round(i * 1e6 / SR), data: parca });
       aenc.encode(ad); ad.close();
-      while (aenc.encodeQueueSize > 8) await bekle(1);
+      while (aenc.encodeQueueSize > 8) await kuyrukBekle(aenc);
     }
     await aenc.flush(); aenc.close();
     if (hata) throw hata;
